@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+      body {
+        touch-action: none; /*https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action*/
+        font-family: "Roboto";
+      }
+      h1 {
+       margin: 50px;
+       font-size: 30px;
+       text-align: center;
+     }
+     canvas{
+       width: 200px;
+       height: 200px;
+     }
+     #paint {
+       border:2px solid black;
+       width: 200px;
+       height: 200px;
+       margin: auto;
+     }
+     #digitBox {
+       font-size: 24px;
+       margin-top: 40px;
+     }
+     #clear {
+       width: 200px;
+       margin: auto;
+       padding: 30px;
+       text-align: center;
+       font-size : 20px;
+     }
+     #heading{
+       font-size : 28px;
+     }
+    </style>
+  </head>
+  <body>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.5.2/dist/tf.min.js"></script>
+    <h1>MNIST Web</h1>
+    <p id = 'heading'>Write a digit in the box:</p>
+    <div id="paint">
+      <canvas id="myCanvas"></canvas><br>
+      <button id="clear">Clear</button><br>
+    </div>
+    <br><br><br>
+    <div>
+      <p id="digitBox"></p>
+    </div>
+    <script type="text/javascript">
+      var canvas = document.getElementById('myCanvas');
+      var context = canvas.getContext('2d');
+      var cStyle = getComputedStyle(document.getElementById('paint'));
+      canvas.width = parseInt(cStyle.getPropertyValue('width'));
+      canvas.height = parseInt(cStyle.getPropertyValue('height'));
+      context.lineWidth = 25;
+      context.lineJoin = 'round';
+      context.lineCap = 'round';
+
+      context.strokeStyle = '#000000';
+      canvas.addEventListener('mousedown', function(evt) {
+          context.moveTo(evt.pageX - this.offsetLeft, evt.pageY - this.offsetTop);
+          context.beginPath();
+          canvas.addEventListener('mousemove', onPaint, false);
+        }, false);
+
+    canvas.addEventListener('mouseup', function(evt) {
+      canvas.removeEventListener('mousemove', onPaint, false);
+      var img = new Image();
+
+      img.src = canvas.toDataURL('image/png');
+
+      img.onload = function() {
+        context.drawImage(img, 0, 0, 28, 28);
+
+        data = context.getImageData(0, 0, 28, 28).data;
+
+        var input = [];
+        for(var i = 0; i < data.length; i += 4) {
+          input.push(data[i + 3] / 255);
+        }
+        predict(input);
+      };
+
+      console.log(img.src);
+    }, false);
+
+    var onPaint = function(evt) {
+      context.lineTo(evt.pageX - this.offsetLeft, evt.pageY - this.offsetTop);
+      context.stroke();
+    };
+
+    tf.loadLayersModel('model/model.json').then(function(model) {
+      window.model = model;
+    });
+    i=0;
+    phrases = ["I think it's a ", "Looks like a "];
+    var predict = function(input) {
+      if (window.model){
+        s = phrases[Math.floor(Math.random()*2)];
+        window.model.predict([tf.tensor(input).reshape([1, 28, 28, 1])]).array().then(function(scores) {
+          scores = scores[0];
+          predicted = scores.indexOf(Math.max(...scores));
+          s = s + predicted + "<br><br>Well, here are the probabilities I guessed...";
+          for(i=0; i<10; i++){
+            s = s+ "<br><pre>" + i + " : " + String(scores[i]);
+          }
+          $('#digitBox').html(s);
+        })
+      }
+      else{
+        setTimeout(function() {predict(input)}, 50);
+      }
+    }
+
+    $('#clear').click(function() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      $('#digitBox').html("");
+    })
+
+    </script>
+  </body>
+</html>

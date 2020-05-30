@@ -3,7 +3,11 @@ A website that recognizes written digits.
 
 This project reads a digit written on a canvas element and recognizes it. It also lists the probabilities that it has assigned for each digit from 0-9.
 
+![Webpage](image/img1.JPG)
 
+Digit can be drawn in the box.
+
+![Recognized](/image/img2.JPG)
 
 The website link: https://ayishar.github.io/MNISTweb/
 
